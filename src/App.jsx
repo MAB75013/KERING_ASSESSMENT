@@ -91,10 +91,18 @@ const AMBITION_PILLARS = [
 ];
 
 const DEPLOY_OPTS = [
-  {id:"platform",label:"Group Platform",        desc:"Centralized DPP infrastructure managed at Group level — maximum economies of scale"},
-  {id:"contract",label:"Group-led Contractual", desc:"Group negotiation & standards, local deployment and operations per Maison"},
-  {id:"mix",     label:"Hybrid Group / Local",  desc:"Shared Group data layer + Maison-specific business applications"},
-  {id:"local",   label:"Full Maison Autonomy",  desc:"Each Maison manages its own DPP independently — minimal Group coordination"},
+  {id:"platform",label:"Group Data Platform",
+   desc:"The Group operates a shared Data Layer (MDM or middleware) aggregating data from all Maisons. Group also sets tag encoding standards and publishes an approved vendor shortlist for business apps. Source IT systems remain Maison-owned.",
+   layers:{sourceIT:false, dataLayer:"full", tags:"standard", bizApps:"approved list"}},
+  {id:"contract",label:"Group-led Contractual",
+   desc:"The Group negotiates a master contract with 1-2 DPP vendors (Data Layer + business apps), securing Group pricing and security guarantees. Each Maison deploys its own instance locally on its own timeline. Group defines the product data standard (schema, API, tag encoding) but does not operate any system.",
+   layers:{sourceIT:false, dataLayer:"contract", tags:"standard", bizApps:"contract"}},
+  {id:"mix",     label:"Group Standards Only",
+   desc:"The Group defines only the common data schema and minimum tag technical specifications. Each Maison freely selects its Data Layer, tags and business apps from a compatible vendor list. No Group contract, no shared infrastructure.",
+   layers:{sourceIT:false, dataLayer:false, tags:"specs only", bizApps:false}},
+  {id:"local",   label:"Full Maison Autonomy",
+   desc:"No Group intervention at any layer. Each Maison designs its full DPP architecture independently. Zero economies of scale — high risk of data incompatibility across Maisons over time.",
+   layers:{sourceIT:false, dataLayer:false, tags:false, bizApps:false}},
 ];
 
 const BUSINESS_TEAMS    = [{id:"product",label:"Product / Design"},{id:"sustain",label:"Sustainability"},{id:"legal",label:"Legal / Compliance"},{id:"it",label:"IT / Data"},{id:"supply",label:"Supply Chain"},{id:"retail",label:"Retail / CX"},{id:"marketing",label:"Marketing"},{id:"aftersales",label:"After-Sales"}];
@@ -924,18 +932,35 @@ function Phase2({maison,col}){
           <SecHead col={col} timing="15 min">G · Deployment Model</SecHead>
           <div style={{color:K.muted,fontSize:10,fontFamily:f,fontStyle:"italic",marginBottom:14}}>"If the Group launched a shared DPP initiative, which model would work for your Maison?"</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
-            {DEPLOY_OPTS.map((opt,oi)=>{
-              const oc=[K.green,K.mid,K.gold,K.red][oi];
-              const active=data.deploy===opt.id;
-              return(
-                <button key={opt.id} onClick={()=>upd({deploy:data.deploy===opt.id?"":opt.id})}
-                  style={{padding:"14px 16px",borderRadius:8,background:active?oc+"1a":K.bg,border:`1.5px solid ${active?oc:K.border}`,cursor:"pointer",textAlign:"left",fontFamily:f,transition:"all .15s"}}>
-                  <div style={{color:active?oc:K.text,fontSize:12,fontWeight:600,fontFamily:fs,marginBottom:5}}>{opt.label}</div>
-                  <div style={{color:K.muted,fontSize:10,lineHeight:1.5}}>{opt.desc}</div>
-                  {active&&<div style={{color:oc,fontSize:10,marginTop:8,fontWeight:600}}>✓ Preferred</div>}
-                </button>
-              );
-            })}
+          {DEPLOY_OPTS.map((opt,oi)=>{
+            const oc=[K.green,K.mid,K.gold,K.red][oi];
+            const active=data.deploy===opt.id;
+            const LAYER_LABELS=["Source IT","Data Layer","Tags","Business Apps"];
+            const LAYER_KEYS=["sourceIT","dataLayer","tags","bizApps"];
+            return(
+              <button key={opt.id} onClick={()=>upd({deploy:data.deploy===opt.id?"":opt.id})}
+                style={{padding:"14px 16px",borderRadius:8,background:active?oc+"1a":K.bg,border:`1.5px solid ${active?oc:K.border}`,cursor:"pointer",textAlign:"left",fontFamily:f,transition:"all .15s"}}>
+                <div style={{color:active?oc:K.text,fontSize:12,fontWeight:600,fontFamily:fs,marginBottom:6}}>{opt.label}</div>
+                <div style={{color:K.muted,fontSize:10,lineHeight:1.5,marginBottom:10}}>{opt.desc}</div>
+                {/* Layer grid */}
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:4,marginBottom:active?10:0}}>
+                  {LAYER_KEYS.map((k,li)=>{
+                    const val=opt.layers[k];
+                    const active2=!!val;
+                    const lc=active2?oc:K.border;
+                    return(
+                      <div key={k} style={{display:"flex",alignItems:"center",gap:5,padding:"3px 7px",borderRadius:4,background:active2?oc+"0f":K.card,border:`1px solid ${lc}`}}>
+                        <span style={{color:lc,fontSize:9,fontWeight:700}}>{active2?"✓":"✗"}</span>
+                        <span style={{color:active2?K.text:K.muted,fontSize:8,fontFamily:f,fontWeight:active2?600:400}}>{LAYER_LABELS[li]}</span>
+                        {val&&val!==true&&<span style={{color:lc,fontSize:7,fontFamily:f,marginLeft:2,fontStyle:"italic"}}>{val}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+                {active&&<div style={{color:oc,fontSize:10,fontWeight:600}}>✓ Preferred model</div>}
+              </button>
+            );
+          })}
           </div>
           <Tx value={data.deployNote} onChange={e=>upd({deployNote:e.target.value})} placeholder="Conditions, constraints, prerequisites — budget, timing, governance…" h={60}/>
           <div style={{marginTop:14,borderTop:`1px solid ${K.border}`,paddingTop:14}}>
