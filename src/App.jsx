@@ -280,23 +280,30 @@ function DataPanel({onImported}){
   const flash=m=>{setMsg(m);setTimeout(()=>setMsg(""),5000);};
 
   // ── Generate JSON from all stored data ────────────────────────────────────
-  const generateJSON=async()=>{
-    const out={};
-    for(const k of MAISONS.flatMap(m=>[`pre_${m}`,`atelier_${m}`]).concat(["synthese_group"])){
-      const v=await storeLoad(k); if(v) out[k]=v;
-    }
-    if(Object.keys(out).length===0){ flash("No data to export yet"); return; }
-    const str=JSON.stringify(out,null,2);
+const generateJSON=async()=>{
+  const out={};
+  const keys=MAISONS.flatMap(m=>[`pre_${m}`,`atelier_${m}`]).concat(["synthese_group"]);
+  for(const k of keys){ const v=await storeLoad(k); if(v) out[k]=v; }
+  if(Object.keys(out).length===0){ flash("No data to export yet"); return; }
+  const str=JSON.stringify(out,null,2);
+  try{
+    const blob=new Blob([str],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download=`DPP_Kering_${new Date().toISOString().slice(0,10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    flash(`✓ File downloaded — DPP_Kering_${new Date().toISOString().slice(0,10)}.json`);
+  }catch{
     setJson(str);
     setMode("export");
-    try{
-      await navigator.clipboard.writeText(str);
-      flash(`✓ JSON ready — also copied to clipboard (${Object.keys(out).length} entries)`);
-    }catch{
-      flash(`✓ JSON ready — select all and copy manually`);
-    }
-  };
-
+    try{ await navigator.clipboard.writeText(str); flash("✓ Copied to clipboard"); }
+    catch{ flash("✓ JSON ready — copy manually below"); }
+  }
+};
   // ── Import from pasted JSON ───────────────────────────────────────────────
   const doImport=async()=>{
     if(!json.trim()){ flash("Paste your JSON first"); return; }
