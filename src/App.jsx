@@ -328,18 +328,28 @@ function DataPanel({onImported}){
   // ── Generate JSON from all stored data ────────────────────────────────────
   const generateJSON=async()=>{
     const out={};
-    for(const k of MAISONS.flatMap(m=>[`pre_${m}`,`atelier_${m}`]).concat(["synthese_group"])){
-      const v=await storeLoad(k); if(v) out[k]=v;
-    }
+    const keys=MAISONS.flatMap(m=>[`pre_${m}`,`atelier_${m}`]).concat(["synthese_group"]);
+    for(const k of keys){ const v=await storeLoad(k); if(v) out[k]=v; }
     if(Object.keys(out).length===0){ flash("No data to export yet"); return; }
     const str=JSON.stringify(out,null,2);
-    setJson(str);
-    setMode("export");
+    // Try direct file download (works on GitHub Pages)
     try{
-      await navigator.clipboard.writeText(str);
-      flash(`✓ JSON ready — also copied to clipboard (${Object.keys(out).length} entries)`);
+      const blob=new Blob([str],{type:"application/json"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;
+      a.download=`DPP_Kering_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      flash(`✓ File downloaded — ${Object.keys(out).length} entries`);
     }catch{
-      flash(`✓ JSON ready — select all and copy manually`);
+      // Fallback: show in textarea
+      setJson(str);
+      setMode("export");
+      try{ await navigator.clipboard.writeText(str); flash("✓ Copied to clipboard"); }
+      catch{ flash("✓ JSON ready — copy manually below"); }
     }
   };
 
