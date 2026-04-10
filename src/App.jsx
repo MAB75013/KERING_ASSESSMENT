@@ -196,6 +196,52 @@ const Sel = ({value,onChange,children,s={}}) => (
   </select>
 );
 
+// Dropdown multi-select with checkboxes
+function MultiSelect({options,selected=[],onChange,placeholder,accentColor,otherValue="",onOtherChange}){
+  const [open,setOpen]=useState(false);
+  const ref=React.useRef(null);
+  React.useEffect(()=>{
+    const h=(e)=>{ if(ref.current&&!ref.current.contains(e.target))setOpen(false); };
+    document.addEventListener("mousedown",h);
+    return()=>document.removeEventListener("mousedown",h);
+  },[]);
+  const col=accentColor||K.mid;
+  const label=selected.length===0?placeholder:selected.length===options.length?"All":selected.join(", ");
+  const hasOther=selected.includes("Other");
+  return(
+    <div ref={ref} style={{position:"relative"}}>
+      <button onClick={()=>setOpen(o=>!o)}
+        style={{width:"100%",padding:"5px 8px",borderRadius:5,background:K.card,border:`1px solid ${selected.length?col:K.border}`,color:selected.length?col:K.muted,fontSize:9,fontFamily:f,cursor:"pointer",textAlign:"left",display:"flex",justifyContent:"space-between",alignItems:"center",gap:4}}>
+        <span style={{overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{label}</span>
+        <span style={{fontSize:8,flexShrink:0}}>{open?"▲":"▼"}</span>
+      </button>
+      {open&&(
+        <div style={{position:"absolute",top:"100%",left:0,zIndex:200,background:K.card,border:`1px solid ${K.border2}`,borderRadius:6,padding:"6px 0",minWidth:160,boxShadow:"0 4px 14px rgba(52,44,40,.12)",maxHeight:220,overflowY:"auto"}}>
+          {options.map(opt=>{
+            const checked=selected.includes(opt);
+            return(
+              <label key={opt} style={{display:"flex",alignItems:"center",gap:7,padding:"5px 10px",cursor:"pointer",background:checked?col+"0d":"transparent"}}>
+                <input type="checkbox" checked={checked} onChange={()=>{
+                  const next=checked?selected.filter(x=>x!==opt):[...selected,opt];
+                  onChange(next);
+                }} style={{accentColor:col,cursor:"pointer"}}/>
+                <span style={{fontSize:9,color:checked?col:K.text,fontFamily:f,fontWeight:checked?600:400}}>{opt}</span>
+              </label>
+            );
+          })}
+          {hasOther&&onOtherChange&&(
+            <div style={{padding:"4px 10px",borderTop:`1px solid ${K.border}`}}>
+              <input value={otherValue} onChange={e=>onOtherChange(e.target.value)} placeholder="Specify other…"
+                style={{width:"100%",fontSize:9,border:`1px solid ${K.border}`,borderRadius:4,padding:"4px 6px",fontFamily:f,outline:"none",boxSizing:"border-box"}}/>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 const Tx = ({value,onChange,placeholder,h=80}) => (
   <textarea value={value} onChange={onChange} placeholder={placeholder}
     style={{width:"100%",height:h,background:K.bg,border:`1px solid ${K.border}`,borderRadius:6,color:K.text,fontSize:11,padding:"9px 12px",fontFamily:f,resize:"vertical",outline:"none",boxSizing:"border-box",lineHeight:1.7}}
@@ -479,7 +525,7 @@ const INIT_A = {
   dppCoverage:{},dppSource:{},dppNote:"",
   ambitionPriority:{},ambitionNote:{},ambitionHorizon:{},
   bizNeeds:{},govMat:{},freins:{},freinOther:"",freinNotes:{},govNote:"",
-  deployOpen:"",quickwins:["","",""],groupNeeds:"",
+  deploy:"",deployNote:"",deployOpen:"",quickwins:["","",""],groupNeeds:"",
   initiatives:[],archNote:"",archSchemaRef:"",
 };
 
@@ -500,7 +546,7 @@ function Phase2({maison,col}){
   const dk=(c,d)=>`${c}__${d.replace(/ /g,"_")}`;
   const stp=FLOW_STEPS.find(s=>s.id===step);
 
-  const SECS=[{id:"B",label:"Data Landscape",t:"25 min"},{id:"C",label:"DPP Data Coverage",t:"15 min"},{id:"D",label:"DPP Ambitions",t:"20 min"},{id:"E",label:"Business Needs",t:"10 min"},{id:"F",label:"Barriers & Gov.",t:"15 min"},{id:"G",label:"Deployment",t:"15 min"},{id:"H",label:"Initiatives",t:"20 min"}];
+  const SECS=[{id:"A",label:"Data Landscape",t:"25 min"},{id:"B",label:"DPP Data Coverage",t:"15 min"},{id:"C",label:"DPP Ambitions",t:"20 min"},{id:"D",label:"Business Needs",t:"10 min"},{id:"E",label:"Barriers & Gov.",t:"15 min"},{id:"F",label:"Deployment",t:"15 min"},{id:"G",label:"Initiatives",t:"20 min"}];
 
   return(
     <div style={{display:"flex",flexDirection:"column",gap:14}}>
@@ -521,9 +567,9 @@ function Phase2({maison,col}){
       </Card>
 
       {/* B — Data Landscape */}
-      {sec==="B"&&(
+      {sec==="A"&&(
         <Card>
-          <SecHead col={col} timing="25 min">B · Data Landscape & System Maturity</SecHead>
+          <SecHead col={col} timing="25 min">A · Data Landscape & System Maturity</SecHead>
           <div style={{color:K.muted,fontSize:10,fontFamily:f,fontStyle:"italic",marginBottom:14}}>"For each lifecycle stage: which division, which system, what granularity, how does data flow, where does it break?"</div>
 
           {/* Step tabs */}
@@ -534,7 +580,7 @@ function Phase2({maison,col}){
               const isA=step===st.id;
               return(
                 <button key={st.id} onClick={()=>setStep(st.id)}
-                  style={{flex:1,padding:"10px 4px",background:isA?col+"14":K.card,border:"none",borderRight:idx<5?`1px solid ${K.border}`:"none",cursor:"pointer",fontFamily:f}}>
+                  style={{flex:1,padding:"10px 4px",background:isA?col+"14":K.card,border:"none",borderRight:idx<7?`1px solid ${K.border}`:"none",cursor:"pointer",fontFamily:f}}>
                   <div style={{color:isA?col:K.border2,fontSize:11,fontWeight:700}}>{String(idx+1).padStart(2,"0")}</div>
                   <div style={{color:isA?col:K.muted,fontSize:8,marginTop:3,lineHeight:1.3,fontWeight:isA?600:400}}>{st.label.split(" & ")[0].split(" / ")[0]}</div>
                   <div style={{display:"flex",gap:3,justifyContent:"center",marginTop:4}}>
@@ -577,7 +623,7 @@ function Phase2({maison,col}){
               : (
                 <div style={{overflowX:"auto"}}>
                   {/* Column headers */}
-                  <div style={{display:"grid",gridTemplateColumns:"140px 1fr 110px 90px 130px 1fr 28px",gap:5,marginBottom:5,minWidth:900}}>
+                  <div style={{display:"grid",gridTemplateColumns:"110px 1fr 100px 85px 140px 1fr 26px",gap:4,marginBottom:5,minWidth:820}}>
                     {["Divisions","System / Tool","Data granularity","Frequency","Integration modes","Pain point / Difficulty",""].map(h=>(
                       <span key={h} style={{color:K.muted,fontSize:8,fontFamily:f,letterSpacing:.5,textTransform:"uppercase"}}>{h}</span>
                     ))}
@@ -586,28 +632,20 @@ function Phase2({maison,col}){
                     {getE(step).map((entry,idx)=>{
                       const dc=(entry.divisions&&entry.divisions.length>0)?divCol[entry.divisions[0]]||K.mid:K.border;
                       return(
-                        <div key={idx} style={{display:"grid",gridTemplateColumns:"140px 1fr 110px 90px 130px 1fr 28px",gap:5,alignItems:"start"}}>
-                          {/* Divisions — multi-select pills */}
-                          <div style={{background:K.card,border:`1px solid ${K.border}`,borderRadius:5,padding:"4px 5px",minHeight:34}}>
-                            <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:3}}>
-                              {DIVISIONS.map(d=>{
+                        <div key={idx} style={{display:"grid",gridTemplateColumns:"110px 1fr 100px 85px 140px 1fr 26px",gap:4,alignItems:"start"}}>
+                          {/* Divisions — inline pills */}
+                          <div style={{display:"flex",flexWrap:"wrap",gap:3,padding:"4px 3px"}}>
+                            {DIVISIONS.map(d=>{
+                              const active=(entry.divisions||[]).includes(d);
+                              const dc2=divCol[d];
+                              return(<button key={d} onClick={()=>{
                                 const divs=entry.divisions||[];
-                                const active=divs.includes(d);
-                                const dc2=divCol[d];
-                                return(<button key={d} onClick={()=>{
-                                  const next=active?divs.filter(x=>x!==d):[...divs,d];
-                                  updE(step,idx,{divisions:next});
-                                }} style={{padding:"2px 6px",borderRadius:10,fontSize:8,cursor:"pointer",background:active?dc2+"1a":"transparent",border:`1px solid ${active?dc2:K.border}`,color:active?dc2:K.muted,fontFamily:f,fontWeight:active?600:400,transition:"all .1s"}}>
-                                  {d.split(" ")[0]}
-                                </button>);
-                              })}
-                            </div>
-                            <button onClick={()=>{
-                              const allActive=DIVISIONS.every(d=>(entry.divisions||[]).includes(d));
-                              updE(step,idx,{divisions:allActive?[]:DIVISIONS});
-                            }} style={{fontSize:7,color:K.muted,background:"transparent",border:"none",cursor:"pointer",fontFamily:f,padding:0}}>
-                              {DIVISIONS.every(d=>(entry.divisions||[]).includes(d))?"Clear all":"All"}
-                            </button>
+                                const next=active?divs.filter(x=>x!==d):[...divs,d];
+                                updE(step,idx,{divisions:next});
+                              }} style={{padding:"2px 5px",borderRadius:10,fontSize:8,cursor:"pointer",background:active?dc2+"1a":"transparent",border:`1px solid ${active?dc2:K.border}`,color:active?dc2:K.muted,fontFamily:f,fontWeight:active?600:400,lineHeight:1.4}}>
+                                {d==="Leather Goods"?"LG":d==="Ready-to-Wear"?"RTW":d}
+                              </button>);
+                            })}
                           </div>
                           {/* System */}
                           <Inp value={entry.system} onChange={e=>updE(step,idx,{system:e.target.value})} placeholder="SAP, Lectra PLM, PIM…" s={{width:"100%",boxSizing:"border-box"}}/>
@@ -621,22 +659,21 @@ function Phase2({maison,col}){
                             <option value="">Freq…</option>
                             {FREQ.map(f2=><option key={f2} value={f2}>{f2}</option>)}
                           </Sel>
-                          {/* Integration modes — multi-select */}
-                          <div style={{background:K.card,border:`1px solid ${K.border}`,borderRadius:5,padding:"4px 5px",minHeight:34}}>
-                            <div style={{display:"flex",gap:3,flexWrap:"wrap",marginBottom:2}}>
-                              {INTEGRATION_MODES.map(m=>{
+                          {/* Integration modes — inline pills */}
+                          <div style={{display:"flex",flexWrap:"wrap",gap:2,padding:"3px 3px"}}>
+                            {INTEGRATION_MODES.map(m=>{
+                              const active=(entry.integrationModes||[]).includes(m);
+                              return(<button key={m} onClick={()=>{
                                 const modes=entry.integrationModes||[];
-                                const active=modes.includes(m);
-                                return(<button key={m} onClick={()=>{
-                                  const next=active?modes.filter(x=>x!==m):[...modes,m];
-                                  updE(step,idx,{integrationModes:next});
-                                }} style={{padding:"2px 5px",borderRadius:10,fontSize:7.5,cursor:"pointer",background:active?col+"1a":"transparent",border:`1px solid ${active?col:K.border}`,color:active?col:K.muted,fontFamily:f,fontWeight:active?600:400,transition:"all .1s"}}>
-                                  {m}
-                                </button>);
-                              })}
-                            </div>
+                                const next=active?modes.filter(x=>x!==m):[...modes,m];
+                                updE(step,idx,{integrationModes:next});
+                              }} style={{padding:"2px 4px",borderRadius:10,fontSize:7.5,cursor:"pointer",background:active?col+"1a":"transparent",border:`1px solid ${active?col:K.border}`,color:active?col:K.muted,fontFamily:f,fontWeight:active?600:400,lineHeight:1.4}}>
+                                {m==="Event streaming"?"Event":m==="REST API"?"REST":m==="GraphQL API"?"GraphQL":m==="SOAP API"?"SOAP":m}
+                              </button>);
+                            })}
                             {(entry.integrationModes||[]).includes("Other")&&(
-                              <input value={entry.integrationOther||""} onChange={e=>updE(step,idx,{integrationOther:e.target.value})} placeholder="Specify…" style={{width:"100%",fontSize:8,border:"none",borderTop:`1px solid ${K.border}`,padding:"2px 4px",fontFamily:f,outline:"none",background:K.bg,boxSizing:"border-box"}}/>
+                              <input value={entry.integrationOther||""} onChange={e=>updE(step,idx,{integrationOther:e.target.value})} placeholder="Specify…"
+                                style={{fontSize:8,border:`1px solid ${K.border}`,borderRadius:4,padding:"2px 5px",fontFamily:f,outline:"none",marginTop:2,width:"100%"}}/>
                             )}
                           </div>
                           {/* Pain point */}
@@ -742,9 +779,9 @@ function Phase2({maison,col}){
       )}
 
       {/* C — DPP Coverage */}
-      {sec==="C"&&(
+      {sec==="B"&&(
         <Card>
-          <SecHead col={col} timing="15 min">C · DPP Data Coverage</SecHead>
+          <SecHead col={col} timing="15 min">B · DPP Data Coverage</SecHead>
           <div style={{color:K.muted,fontSize:10,fontFamily:f,fontStyle:"italic",marginBottom:12}}>"Estimate coverage per category per product division, and identify the source system."</div>
           {/* Division tabs */}
           <div style={{display:"flex",gap:6,marginBottom:16}}>
@@ -812,9 +849,9 @@ function Phase2({maison,col}){
       )}
 
       {/* D — DPP Ambitions */}
-      {sec==="D"&&(
+      {sec==="C"&&(
         <Card>
-          <SecHead col={col} timing="20 min">D · DPP Ambitions — 3 Pillars</SecHead>
+          <SecHead col={col} timing="20 min">C · DPP Ambitions — 3 Pillars</SecHead>
           <div style={{color:K.muted,fontSize:10,fontFamily:f,fontStyle:"italic",marginBottom:14}}>"Which pillar creates the most value for your Maison? At what time horizon?"</div>
           <div style={{display:"flex",flexDirection:"column",gap:10}}>
             {AMBITION_PILLARS.map((pillar,pi)=>{
@@ -855,9 +892,9 @@ function Phase2({maison,col}){
       )}
 
       {/* E — Business Needs */}
-      {sec==="E"&&(
+      {sec==="D"&&(
         <Card>
-          <SecHead col={col} timing="10 min">E · Business Needs</SecHead>
+          <SecHead col={col} timing="10 min">D · Business Needs</SecHead>
           <div style={{color:K.muted,fontSize:10,fontFamily:f,fontStyle:"italic",marginBottom:12}}>"Which teams need DPP data, and for which use case?"</div>
           <div style={{overflowX:"auto"}}>
             <table style={{borderCollapse:"collapse",width:"100%",fontSize:10,minWidth:640}}>
@@ -894,9 +931,9 @@ function Phase2({maison,col}){
       )}
 
       {/* F — Barriers & Governance */}
-      {sec==="F"&&(
+      {sec==="E"&&(
         <Card>
-          <SecHead col={col} timing="15 min">F · Barriers & Governance Maturity</SecHead>
+          <SecHead col={col} timing="15 min">E · Barriers & Governance Maturity</SecHead>
           <div style={{color:K.muted,fontSize:10,fontFamily:f,fontStyle:"italic",marginBottom:12}}>"What are the real blockers? Where do you stand on product data governance?"</div>
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:16,marginBottom:12}}>
             <div>
@@ -946,36 +983,39 @@ function Phase2({maison,col}){
       )}
 
       {/* G — Deployment */}
-      {sec==="G"&&(
+      {sec==="F"&&(
         <Card>
-          <SecHead col={col} timing="15 min">G · Deployment Model</SecHead>
-          <div style={{color:K.muted,fontSize:10,fontFamily:f,fontStyle:"italic",marginBottom:14}}>"Given what you know about your current architecture and the Group's direction towards shared infrastructure — how do you see your Maison participating in a Group DPP initiative?"</div>
-
-          {/* Reference models — for context only */}
-          <div style={{background:K.panel,borderRadius:6,border:`1px solid ${K.border}`,padding:"12px 14px",marginBottom:14}}>
-            <div style={{color:K.muted,fontSize:9,letterSpacing:.8,textTransform:"uppercase",fontFamily:f,marginBottom:10}}>Reference models (for context)</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-              {[
-                {col:K.green, label:"Group Data Layer",       desc:"Group operates a central data repository (MDM or middleware) + sets tag encoding standards and approved vendor list"},
-                {col:K.mid,   label:"Group-led Contractual",  desc:"Group negotiates master contract — each Maison deploys its own instance on its own timeline"},
-                {col:K.gold,  label:"Group Standards Only",   desc:"Group defines common data schema and minimum tag specs only — no shared infrastructure or contract"},
-                {col:K.red,   label:"Full Maison Autonomy",   desc:"No Group intervention — each Maison fully independent. High risk of incompatibility over time."},
-              ].map((opt,i)=>(
-                <div key={i} style={{padding:"10px 12px",borderRadius:6,background:K.card,border:`1px solid ${opt.col}33`}}>
-                  <div style={{color:opt.col,fontSize:10,fontWeight:600,fontFamily:f,marginBottom:4}}>{opt.label}</div>
-                  <div style={{color:K.muted,fontSize:9,fontFamily:f,lineHeight:1.5}}>{opt.desc}</div>
-                </div>
-              ))}
-            </div>
+          <SecHead col={col} timing="15 min">F · Deployment Model</SecHead>
+          <div style={{color:K.muted,fontSize:10,fontFamily:f,fontStyle:"italic",marginBottom:14}}>"If the Group launched a shared DPP initiative, which model would work for your Maison?"</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14}}>
+            {[
+              {id:"platform", col:K.green, label:"Group Data Layer",
+               desc:"Group operates a central data repository (MDM or middleware) + sets tag encoding standards and an approved vendor list for business apps.",
+               layers:"Data Layer ✓ · Tags standard ✓ · Business apps (approved list) ✓"},
+              {id:"contract", col:K.mid,   label:"Group-led Contractual",
+               desc:"Group negotiates a master contract with DPP vendors, securing Group pricing and security guarantees. Each Maison deploys its own instance locally.",
+               layers:"Data Layer (contract) ✓ · Tags standard ✓ · Business apps (contract) ✓"},
+              {id:"standards",col:K.gold,  label:"Group Standards Only",
+               desc:"Group defines the common data schema and minimum tag specs only. Each Maison selects its own Data Layer, tags and apps from a compatible vendor list.",
+               layers:"Data schema ✓ · Tag specs ✓ · No shared infrastructure"},
+              {id:"local",    col:K.red,   label:"Full Maison Autonomy",
+               desc:"No Group intervention at any layer. Each Maison designs its full DPP architecture independently. High risk of incompatibility across Maisons over time.",
+               layers:"No Group intervention at any layer"},
+            ].map((opt)=>{
+              const active=data.deploy===opt.id;
+              return(
+                <button key={opt.id} onClick={()=>upd({deploy:data.deploy===opt.id?"":opt.id})}
+                  style={{padding:"14px 16px",borderRadius:8,background:active?opt.col+"1a":K.bg,border:`1.5px solid ${active?opt.col:K.border}`,cursor:"pointer",textAlign:"left",fontFamily:f,transition:"all .15s"}}>
+                  <div style={{color:active?opt.col:K.text,fontSize:12,fontWeight:600,fontFamily:fs,marginBottom:6}}>{opt.label}</div>
+                  <div style={{color:K.muted,fontSize:10,lineHeight:1.5,marginBottom:8}}>{opt.desc}</div>
+                  <div style={{fontSize:8,color:opt.col,fontFamily:f,fontStyle:"italic"}}>{opt.layers}</div>
+                  {active&&<div style={{color:opt.col,fontSize:10,marginTop:8,fontWeight:600}}>✓ Preferred model</div>}
+                </button>
+              );
+            })}
           </div>
-
-          {/* Open question */}
-          <div style={{marginBottom:10}}>
-            <div style={{color:K.text,fontSize:10,fontWeight:600,fontFamily:f,marginBottom:6}}>Your Maison's perspective</div>
-            <Tx value={data.deployOpen||""} onChange={e=>upd({deployOpen:e.target.value})} placeholder="How do you see your Maison participating? What conditions or prerequisites would be needed? What concerns do you have about a Group approach? What would you want the Group to own vs. your Maison to own?…" h={100}/>
-          </div>
-
-          <div style={{borderTop:`1px solid ${K.border}`,paddingTop:14,marginTop:4}}>
+          <Tx value={data.deployNote||""} onChange={e=>upd({deployNote:e.target.value})} placeholder="Conditions, constraints, prerequisites — budget, timing, governance…" h={60}/>
+          <div style={{marginTop:14,borderTop:`1px solid ${K.border}`,paddingTop:14}}>
             <div style={{color:K.muted,fontSize:10,fontFamily:f,fontStyle:"italic",marginBottom:10}}>"3 actions your Maison could take in the next 90 days — with or without the Group."</div>
             <div style={{display:"flex",flexDirection:"column",gap:6,marginBottom:10}}>
               {(data.quickwins||["","",""]).map((qw,i)=>(
@@ -990,10 +1030,9 @@ function Phase2({maison,col}){
         </Card>
       )}
 
-      {/* H — Initiatives & Architecture */}
-      {sec==="H"&&(
+      {sec==="G"&&(
         <Card>
-          <SecHead col={col} timing="20 min">H · Initiatives & Architecture</SecHead>
+          <SecHead col={col} timing="20 min">G · Initiatives & Architecture</SecHead>
           <div style={{color:K.muted,fontSize:10,fontFamily:f,fontStyle:"italic",marginBottom:14}}>"What DPP-related projects has your Maison already run or explored? For key initiatives, what does the data architecture look like?"</div>
 
           {/* Initiative cards */}
@@ -1136,12 +1175,12 @@ function Phase3({col}){
       return ov!=null?ov:(mats.length?mats.reduce((a,b)=>a+b,0)/mats.length:null);
     }).filter(v=>v!==null);
     const spread=techScores.length>1?Math.max(...techScores)-Math.min(...techScores):0;
-    const s1=Math.min(5,Math.max(1,Math.round(1+(spread/3)*4)));
+    const s1=Math.min(5,Math.max(1,Math.round(1+(spread/3)*4))); // spread 0-3 on 4-level scale → score 1-5
 
     // 2. Median data maturity
     const sorted=[...techScores].sort((a,b)=>a-b);
     const median=sorted.length?sorted[Math.floor(sorted.length/2)]:3;
-    const s2=Math.min(5,Math.max(1,Math.round(median*(5/4))));
+    const s2=Math.min(5,Math.max(1,Math.round(median*(5/4)))); // median 1-4 → rescaled to 1-5
 
     // 3. Shared regulatory pressure — reg ambition × inverse DPP coverage
     const regPrios=MAISONS.map(m=>atel[m]?.ambitionPriority?.reg||0).filter(v=>v>0);
@@ -1154,12 +1193,11 @@ function Phase3({col}){
     const avgCov=covVals.length?covVals.reduce((a,b)=>a+b,0)/covVals.length:50;
     const s3=Math.min(5,Math.max(1,Math.round((avgReg+(5-(avgCov/25)))/2)));
 
-    // 4. Willingness to converge — from Section G open text length (more text = more engagement)
-    // Since G is now open-ended, we estimate based on response length as a proxy
-    const deployTexts=MAISONS.map(m=>atel[m]?.deployOpen||"").filter(t=>t.length>0);
-    const avgTextLen=deployTexts.length?deployTexts.reduce((a,b)=>a+b.length,0)/deployTexts.length:0;
-    // Short response (<50 chars) = low engagement = 2, long (>200) = high = 4
-    const s4=Math.min(5,Math.max(1,avgTextLen>200?4:avgTextLen>100?3:avgTextLen>30?2:2));
+    // 4. Willingness to converge — from Section F deployment card selection
+    const deployMap={platform:5,contract:4,standards:3,local:1};
+    const deployVals=MAISONS.map(m=>deployMap[atel[m]?.deploy]||null).filter(v=>v!==null);
+    const avgDeploy=deployVals.length?deployVals.reduce((a,b)=>a+b,0)/deployVals.length:3;
+    const s4=Math.min(5,Math.max(1,Math.round(avgDeploy)));
 
     // 5. DPP coverage gaps — inverse of avg coverage
     const s5=Math.min(5,Math.max(1,Math.round(5-(avgCov/25))));
@@ -1299,7 +1337,7 @@ function Phase3({col}){
           <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:8}}>
             {maisonStatus.map(({m,done,pct,checks})=>{
               const sc=pct>=80?K.green:pct>=40?K.gold:pct>0?K.mid:K.muted;
-              const sections=["B","C","D","E","F","G","H"];
+              const sections=["A","B","C","D","E","F","G"];
               return(
                 <div key={m} style={{background:K.bg,borderRadius:6,padding:"10px 12px",border:`1px solid ${pct>0?sc+"55":K.border}`}}>
                   <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
@@ -1372,18 +1410,23 @@ function Phase3({col}){
               ))}
             </Card>
             <Card>
-              <SecHead col={col}>Deployment — Open Responses</SecHead>
-              <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                {MAISONS.map(m=>{
-                  const txt=allAtelier[m]?.deployOpen||"";
-                  if(!txt)return null;
-                  return(<div key={m} style={{padding:"10px 12px",background:K.alt,borderRadius:6,border:`1px solid ${K.border}`}}>
-                    <div style={{color:K.text,fontSize:10,fontWeight:600,fontFamily:f,marginBottom:4}}>{m}</div>
-                    <div style={{color:K.sub,fontSize:10,fontFamily:f,lineHeight:1.6}}>{txt}</div>
-                  </div>);
-                }).filter(Boolean)}
-                {!MAISONS.some(m=>allAtelier[m]?.deployOpen)&&<div style={{color:K.muted,fontSize:10,fontFamily:f,fontStyle:"italic"}}>No responses yet</div>}
-              </div>
+              <SecHead col={col}>Deployment Model · Preferences</SecHead>
+              {[
+                {id:"platform",label:"Group Data Layer",        c:K.green},
+                {id:"contract",label:"Group-led Contractual",   c:K.mid},
+                {id:"standards",label:"Group Standards Only",   c:K.gold},
+                {id:"local",   label:"Full Maison Autonomy",    c:K.red},
+              ].map(opt=>{
+                const count=MAISONS.filter(m=>allAtelier[m]?.deploy===opt.id).length;
+                return(
+                  <div key={opt.id} style={{display:"flex",alignItems:"center",gap:10,marginBottom:10}}>
+                    <div style={{width:Math.max(count*28,8),height:24,background:count>0?opt.c+"1a":K.bg,border:`1px solid ${count>0?opt.c:K.border}`,borderRadius:4,display:"flex",alignItems:"center",justifyContent:"center",minWidth:24,transition:"width .3s"}}>
+                      {count>0&&<span style={{color:opt.c,fontSize:12,fontWeight:700,fontFamily:fs}}>{count}</span>}
+                    </div>
+                    <Lbl col={K.text} size={10}>{opt.label}</Lbl>
+                  </div>
+                );
+              })}
             </Card>
           </div>
 
