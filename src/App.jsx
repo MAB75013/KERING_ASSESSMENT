@@ -282,7 +282,7 @@ function TechMatTooltip(){
       </button>
       {show&&(
         <div style={{position:"absolute",left:"calc(100% + 8px)",top:"50%",transform:"translateY(-50%)",zIndex:200,background:K.card,border:`1px solid ${K.border2}`,borderRadius:8,padding:14,width:340,boxShadow:"0 4px 20px rgba(52,44,40,.12)",pointerEvents:"none"}}>
-          <div style={{color:K.text,fontSize:11,fontWeight:600,fontFamily:fs,marginBottom:10}}>Tech Maturity Scale — 1 to 5</div>
+          <div style={{color:K.text,fontSize:11,fontWeight:600,fontFamily:fs,marginBottom:10}}>Tech Maturity Scale — 1 to 4</div>
           <div style={{color:K.muted,fontSize:9,fontFamily:f,fontStyle:"italic",marginBottom:10,lineHeight:1.5}}>
             "If I need a product's material composition created this week — how long and how many manual steps before it's available in your target system?"
           </div>
