@@ -263,10 +263,10 @@ const Stars = ({val,onChange,n=5,col=K.accent}) => (
 
 // Tech maturity tooltip definitions
 const TECH_MAT_LABELS = [
-  {score:1, col:"#7A3428", label:"Manual entry",         example:"Data is typed or entered entirely by hand — no system involved"},
-  {score:2, col:"#7A5E28", label:"Manual export",        example:"Human intervention required on a system, with or without manual modification of exported data (e.g. CSV download & upload)"},
-  {score:3, col:"#66554B", label:"Basic integration",    example:"Scheduled batch, API calls, or file retrieval from SFTP — automated, no manual step needed"},
-  {score:4, col:"#3A5E3E", label:"Advanced integration", example:"Real-time data retrieval — data is always current and immediately available"},
+  {score:1, col:"#7A3428", label:"No system",            example:"No dedicated IT system for this stage — data is managed manually (spreadsheets, emails, paper). No integration possible."},
+  {score:2, col:"#7A5E28", label:"Manual export",        example:"An IT system exists but data extraction requires human intervention — manual export (CSV, Excel download), copy-paste, or re-entry. No automated connection."},
+  {score:3, col:"#66554B", label:"Basic integration",    example:"An IT system exists with automated data transfer — scheduled batch, SFTP file retrieval, or periodic API calls. No manual step but not real-time."},
+  {score:4, col:"#3A5E3E", label:"Advanced integration", example:"An IT system exists with real-time or near-real-time data availability — event-driven, streaming, or on-demand API. Data is always current and immediately accessible."},
 ];
 
 function TechMatTooltip(){
